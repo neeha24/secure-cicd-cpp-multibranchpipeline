@@ -1,0 +1,6 @@
+build/
+reports/
+.venv/
+.git/
+.DS_Store
+talisman_report/
