@@ -1,0 +1,7 @@
+build/
+reports/
+.venv/
+*.o
+*.obj
+.DS_Store
+talisman_report/
