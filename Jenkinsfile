@@ -9,7 +9,6 @@ pipeline {
     environment {
         IMAGE_NAME  = "sensor-api"
         IMAGE_TAG   = "${env.BUILD_NUMBER}"
-        DOCKERHUB_USER = "neehase8"
     }
 
     stages {
@@ -54,11 +53,12 @@ pipeline {
             when { not { branch 'feature/*' } }
             steps {
                 sh '''
-                    docker run --rm -v "$PWD:/repo" \
+                    docker run --rm \
+                        --volumes-from jenkins \
                         zricethezav/gitleaks:latest detect \
-                        --source=/repo --no-git \
+                        --source=$WORKSPACE --no-git \
                         --report-format=json \
-                        --report-path=/repo/reports/gitleaks.json || true
+                        --report-path=$WORKSPACE/reports/gitleaks.json || true
                 '''
             }
         }
@@ -75,11 +75,11 @@ pipeline {
             steps {
                 sh '''
                     docker run --rm \
+                        --volumes-from jenkins \
                         -v /var/run/docker.sock:/var/run/docker.sock \
-                        -v "$PWD/reports:/reports" \
                         anchore/syft:latest $IMAGE_NAME:$IMAGE_TAG \
-                        -o cyclonedx-json=/reports/sbom.cyclonedx.json \
-                        -o spdx-json=/reports/sbom.spdx.json
+                        -o cyclonedx-json=$WORKSPACE/reports/sbom.cyclonedx.json \
+                        -o spdx-json=$WORKSPACE/reports/sbom.spdx.json
                 '''
             }
         }
@@ -89,10 +89,10 @@ pipeline {
             steps {
                 sh '''
                     docker run --rm \
+                        --volumes-from jenkins \
                         -v /var/run/docker.sock:/var/run/docker.sock \
-                        -v "$PWD/reports:/reports" \
                         aquasec/trivy:latest image \
-                        --format json --output /reports/trivy.json \
+                        --format json --output $WORKSPACE/reports/trivy.json \
                         --severity HIGH,CRITICAL \
                         $IMAGE_NAME:$IMAGE_TAG || true
                 '''
