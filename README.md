@@ -74,3 +74,65 @@ Push to Docker Hub ........... tagged by build number + latest    [main only]
 |--------|----------|-------------|
 | GET | `/health` | Returns `{"status":"ok"}` |
 | GET | `/stats?values=1.0,2.0,3.0` | Returns min, max, mean, count as JSON |
+
+**Example:**
+```bash
+curl "http://localhost:9090/stats?values=21.4,22.1,19.8,25.0"
+# {"count":4,"min":19.800000,"max":25.000000,"mean":22.075000}
+```
+
+---
+
+## Branch Strategy
+
+| Branch | Pipeline stages | Purpose |
+|--------|----------------|---------|
+| `feature/*` | Build + Test | Fast developer feedback |
+| `develop` | Full security scan, no push | Validate before merging to main |
+| `main` | Full pipeline + Docker Hub | Production-ready artifact |
+
+---
+
+## Prerequisites
+
+- Docker Desktop
+- CMake 3.16+
+- C++17 compiler
+- cppcheck
+- Python 3
+- Jenkins (LTS) with: OWASP Dependency Check plugin, Blue Ocean plugin
+
+Security tools (syft, trivy, gitleaks) run from official Docker images — no installation needed.
+
+---
+
+## Run Locally (No Jenkins)
+
+```bash
+# 1. Build + test
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+
+# 2. Run the API server
+./build/sensor_api
+
+# 3. Test the endpoints
+curl http://localhost:9090/health
+curl "http://localhost:9090/stats?values=21.4,22.1,19.8,25.0"
+
+# 4. Build the container
+docker build -t sensor-api:dev .
+```
+
+---
+
+## Jenkins Setup
+
+```bash
+# Start Jenkins in Docker
+docker run -d --name jenkins \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v jenkins_home:/var/jenkins_home \
+  jenkins/jenkins:lts
