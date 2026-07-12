@@ -27,10 +27,12 @@ target_link_libraries(sensor_api PRIVATE Threads::Threads)
 option(BUILD_TESTING "Build unit tests" ON)
 if(BUILD_TESTING)
   include(FetchContent)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    cmake_policy(SET CMP0135 NEW)
+  endif()
   FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   )
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
